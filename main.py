@@ -6,51 +6,36 @@
 
 import numpy as np
 import math
-import matplotlib.pyplot as plt
-from skimage.color import rgb2gray
-import myMath #Custom math library >:)
 
-#SDV Compression#
+#Custom Libraries
+import Picture
+import CompressionAlgos
 
-a = np.array([[3, 2, 1], #A == matrix of pixle values (b&w)
-              [2, 1, 4]])
-aTransposed = np.array(myMath.invertMatrix(a))
 
-ata = np.dot(aTransposed, a)
 
-eigenvalues,vt = np.linalg.eig(ata) #Gets Eigenvalues and Vt
+##### SDV Compression Example #####
+KValue = 200
 
-print(vt)
+#- - - - - - - Greyscale - - - - - - #
+'''a = Picture.getImg("steinsgate.png", greyscale=True)
+compressiondata = CompressionAlgos.SDV(a, KValue) #Compress the image data
 
-# Get valid non-zero eigenvalues for sigma matrix
-sig = []
-eigenvalues = np.sort(eigenvalues)[::-1] #sorts in descending order
-for val in eigenvalues:
-    for i in range(len(sig)):
-        sig[i].append(0)
+#Save the image!!!
+Picture.savImg("GreyscaleFlower.png", compressiondata)'''
 
-    if val > 0.0000001: #keep eigenval if not 0
-        #add sqrt of value to sig_arr#
-        arrToAppend = []
-        for _ in range(len(sig)):
-            arrToAppend.append(0)
-        arrToAppend.append(math.sqrt(val))
-        sig.append(arrToAppend)
-    if val < -0.00001:
-        print("Found negative eigenval????: "+str(val))    
-    
-sigma = np.array(sig)
+#- - - - - - - - RGBA - - - - - - - -#
+rgbaValues = Picture.getImg("steinsgate.png", greyscale=False)
 
-print(sigma)
+#Separate each channel (Red, Green, Blue, and Alpha)
+r, g, b, a = Picture.convRGBA(rgbaValues, encode=True)
 
-colVectors = []
+#Compress Image Data (for each channel)
+rcomp = CompressionAlgos.SDV(r, KValue)
+gcomp = CompressionAlgos.SDV(g, KValue)
+bcomp = CompressionAlgos.SDV(b, KValue)
+#acomp = CompressionAlgos.SDV(a, KValue)
 
-for i in range(len(sigma)):
-    vtThing = []
-    for values in vt:
-        vtThing.append([values[i]])
-    #vtThing[len(vtThing)-1][0] *= -1
-    print(vtThing)
+#Recombine each channel (Red, Green, Blue, and Alpha)
+pictureData = Picture.convRGBA([rcomp, gcomp, bcomp, a], encode=False)
 
-    matrix = 1/math.sqrt(sigma[i][i])*np.dot(a, np.array(vtThing))
-    print(matrix)
+Picture.savImg("SteinsGate.png", pictureData, greyscale=False)
