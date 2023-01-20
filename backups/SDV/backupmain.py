@@ -15,7 +15,7 @@ import Picture
 
 #SDV Compression#
 
-a = Picture.getImg("flowerbw.jpg", greyscale=True)
+a = Picture.getImg("pjasnonsqare.jpg", greyscale=True)
 #a = Picture.convGreyscale(a, True)
 print(a)
 
@@ -89,7 +89,7 @@ for i in range(len(sigma)):
 U = np.array(colVectors, dtype=np.float64)
 #print(U)
 
-#testA = np.rint(np.dot(np.dot(U, sigma), vt)).astype("uint8") #Successfully separated >:)
+testA = np.rint(np.dot(np.dot(U, sigma), vt)).astype("uint8") #Successfully separated >:)
 
 ####### Next part is the actual compression!!! #######
 #Divide U(columns), Sigma(Singular Values), and VT(rows) into groups

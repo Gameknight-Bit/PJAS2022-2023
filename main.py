@@ -14,17 +14,20 @@ import CompressionAlgos
 
 
 ##### SDV Compression Example #####
-KValue = 200
+KValue = 100
 
 #- - - - - - - Greyscale - - - - - - #
-'''a = Picture.getImg("steinsgate.png", greyscale=True)
+a = Picture.getImg("pjaslogo.jpg", greyscale=True)
+
 compressiondata = CompressionAlgos.SDV(a, KValue) #Compress the image data
 
 #Save the image!!!
-Picture.savImg("GreyscaleFlower.png", compressiondata)'''
+#print(np.array_equal(a, compressiondata))
+
+Picture.savImg("Tester.jpg", compressiondata)
 
 #- - - - - - - - RGBA - - - - - - - -#
-rgbaValues = Picture.getImg("steinsgate.png", greyscale=False)
+'''rgbaValues = Picture.getImg("steinsgate.png", greyscale=False)
 
 #Separate each channel (Red, Green, Blue, and Alpha)
 r, g, b, a = Picture.convRGBA(rgbaValues, encode=True)
@@ -38,4 +41,4 @@ bcomp = CompressionAlgos.SDV(b, KValue)
 #Recombine each channel (Red, Green, Blue, and Alpha)
 pictureData = Picture.convRGBA([rcomp, gcomp, bcomp, a], encode=False)
 
-Picture.savImg("SteinsGate.png", pictureData, greyscale=False)
+Picture.savImg("SteinsGATECOLOR.png", pictureData, greyscale=False)'''

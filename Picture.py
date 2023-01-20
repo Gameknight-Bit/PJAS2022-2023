@@ -4,6 +4,7 @@
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+import PIL.ImageOps
 
 PATH = "testimgs/"
 SAVE_PATH = "testimgs/newimgs/"
@@ -91,7 +92,7 @@ def savImg(newImgName: str, data, greyscale: bool = True): #MUST BE SAVED AS PNG
     else:
         img = Image.fromarray(data, "RGBA")
         #img = img.convert("P", palette=Image.ADAPTIVE, colors=8)
-    #img.show()
+    img.show()
     img.save(SAVE_PATH+newImgName)
     
 #data = getImg("flowerbw.jpg")
