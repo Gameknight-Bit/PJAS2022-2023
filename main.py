@@ -17,14 +17,14 @@ import CompressionAlgos
 KValue = 100
 
 #- - - - - - - Greyscale - - - - - - #
-a = Picture.getImg("pjaslogo.jpg", greyscale=True)
+'''a = Picture.getImg("pjaslogo.jpg", greyscale=True)
 
 compressiondata = CompressionAlgos.SDV(a, KValue) #Compress the image data
 
 #Save the image!!!
-#print(np.array_equal(a, compressiondata))
+print(np.array_equal(a, compressiondata))
 
-Picture.savImg("Tester.jpg", compressiondata)
+Picture.savImg("Tester.jpg", compressiondata)'''
 
 #- - - - - - - - RGBA - - - - - - - -#
 '''rgbaValues = Picture.getImg("steinsgate.png", greyscale=False)
@@ -42,3 +42,19 @@ bcomp = CompressionAlgos.SDV(b, KValue)
 pictureData = Picture.convRGBA([rcomp, gcomp, bcomp, a], encode=False)
 
 Picture.savImg("SteinsGATECOLOR.png", pictureData, greyscale=False)'''
+
+
+###### FFT Compression Example ########
+
+TValue = 0.0001 #Threshold values
+
+#CompressionAlgos.FT()
+
+# - - - - - Greyscale - - - - - - #
+a = Picture.getImg("steinsgate.png", greyscale=True)
+
+compressionData = CompressionAlgos.FFT(a, TValue)
+
+#Save the image!!!
+
+Picture.savImg("fftgate.jpg", compressionData)

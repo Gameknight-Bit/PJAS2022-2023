@@ -2,10 +2,13 @@
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 #Custom Libraries
 import myMath #Custom math library >:)
 import Picture
+
+np.set_printoptions(precision=10, suppress=True)
 
 DATATYPE = np.float64
 
@@ -35,7 +38,7 @@ def SDV(a, kVal: int):
 
     #print(vt.shape)
 
-    #EigenSort (Stupid sorting stuff >:() 
+    ###EigenSort (Stupid sorting stuff >:( )###
     #Set EigenRelations
     eigenRelations = []
     for i in range(len(eigenvalues)):
@@ -66,7 +69,7 @@ def SDV(a, kVal: int):
     #print(vt.shape)
     #print(vt)
 
-    # Get valid non-zero eigenvalues for sigma matrix
+    ### Get valid non-zero eigenvalues for sigma matrix ###
     sig = []
 
     #print(len(eigenvalues))
@@ -93,7 +96,7 @@ def SDV(a, kVal: int):
 
     #print(sigma)
 
-    #Calculating U
+    ###Calculating U###
     colVectors = []
 
     for i in range(len(sigma)):
@@ -120,41 +123,6 @@ def SDV(a, kVal: int):
     #Only take certain number of groups (min compression num 'k')
     #  Sum all multiples for USVt less than min compress
     #  There is the new compressed form >:)
-
-    #minSig = min(sigma.shape)
-
-    #grab Cols from vt
-    #UFinal = [] #np.matrix(U[:, :kVal])#
-    #UVal = maxKVal
-    #if len(U) <= maxKVal:
-    #    UVal = len(U)
-    #for i in range(len(U)):
-    #    UFinal.append(U[i][:UVal])
-    #UFinal = np.array(UFinal)
-    #print(uFinal)
-
-    #Grab Rows from Vt
-    #vtFinal = [] #np.matrix(vt[:kVal, :])#
-    #vtVal = kVal
-    #if len(vt) <= maxKVal:
-    #    vtVal = len(vt)
-    #for i in range(len(vt)):
-    #    if i >= vtVal:
-    #        break
-    #    vtFinal.append(vt[i])
-    #vtFinal = np.array(vtFinal)
-    #print(vtFinal)
-
-    #Grab sigma stuff >:)
-    #sigFinal = [] #np.matrix(sigma[:kVal,:kVal])#
-    #for i in range(minSig):
-    #    if i >= maxKVal:
-    #        break
-    #    sigFinal.append(sigma[i][:maxKVal])
-    #sigFinal = np.array(sigFinal)
-    #print(sigFinal)
-
-    ##################Testing out new method ####################
 
     Afinal = np.array([ [0]*len(list(vt)) for _ in range(len(U)) ], dtype=DATATYPE)
 
@@ -197,3 +165,161 @@ def SDV(a, kVal: int):
                 Afinal[x][y] = 255
 
     return Afinal.astype('uint8')
+
+# - - - - - - - - - - Fourier Calculations - - - - - - - - - - - - - #
+
+def DFTransform(row): #Calculates a DFT on the given array
+    
+    N = len(row)
+    n = np.arange(N)
+    k = n.reshape((N, 1))
+    e = np.exp((-2.0j * math.pi * k * n )/ N)
+
+    retArr = np.dot(e, row)
+
+    return retArr
+
+def InvDFT(row): #Calculates an Inverse DFT on the given array
+
+    N = len(row)
+    n = np.arange(N)
+    k = n.reshape((N, 1))
+    e = np.exp((2.0j * math.pi * k * n )/ N) #Removed negative for j
+
+    retArr = np.dot(e, row)
+
+    return retArr*(1/N) #Just added 1/N
+
+def FFTransform(row): #Calculates a Fast Fourier transform on the Array
+    #Using Cooley-Turkey Variation#
+    N = len(row)
+    
+    if N % 2 > 0:
+        return DFTransform(row)
+    else:
+        even = FFTransform(row[::2])
+        odd = FFTransform(row[1::2])
+        factor = np.exp(-2.0j * np.pi * np.arange(N) / N)
+        return np.concatenate([even + factor[:N // 2] * odd,
+                               even + factor[N // 2:] * odd])
+
+def IFFTransform(row): #Calculates an Inverse Fast Fourier transform on the Array
+    #Using Cooley-Turkey Variation#
+
+    N = len(row)
+    return (1/N)*np.conj(FFTransform(np.conj(row)))
+
+def FT(a, TVal: int): 
+    '''a = [[1, 20, 8],
+        [2, 11, 13],
+        [1, 100, 4],
+        [0, 42, 55]]'''
+
+    threshold = TVal
+
+    #print(np.array(DFTransform(a)))
+
+    x, y = a.shape
+
+    ### 2d DFT ###
+    #Run fourier transform against rows of a
+    rowTrans = []
+    for row in a:
+        rowTrans.append(DFTransform(row))
+    
+    #Run Fourier transform against cols of a
+    fourierSum = [] #End product
+    for col in myMath.invertMatrix(rowTrans):
+        fourierSum.append(DFTransform(col))
+    fourierSum = np.array(myMath.invertMatrix(fourierSum))
+
+    #print(fourierSum)
+
+    magnitudeSpec = 20*np.log10(abs(np.fft.fftshift(fourierSum))) #For fourier analysis
+    #return magnitudeSpec.astype('uint8')
+
+    print(abs(fourierSum))
+    threshold = 0.1*threshold * abs(fourierSum).max()
+    print(threshold)
+
+    indecies = (abs(fourierSum)>threshold)*1
+    print(indecies)
+    fourierSumFiltered = fourierSum*indecies
+
+    count = x*y - sum(sum(indecies))
+    percentLoss = 100-count/(x*y)*100
+    print("Keeping "+str(percentLoss)+"% of the original image...")
+    
+    ### Inverse 2d DFT ###
+    rowTrans = []
+    for row in fourierSumFiltered: #Done on rows
+        rowTrans.append(InvDFT(row))
+
+    fourierEndSum = []
+    for col in myMath.invertMatrix(rowTrans):
+        fourierEndSum.append(InvDFT(col))
+    compressedImgData = np.rint(np.array(myMath.invertMatrix(fourierEndSum)))
+
+    for x in range(len(compressedImgData)): #Reformatting image
+        for y in range(len(compressedImgData[x])):
+            if compressedImgData[x][y] < 0:
+                compressedImgData[x][y] = 0
+            if compressedImgData[x][y] > 255:
+                compressedImgData[x][y] = 255
+
+    return compressedImgData.astype('uint8')
+
+def FFT(a, TVal: int): 
+    threshold = TVal
+
+    x, y = a.shape
+
+    ### 2d DFT ###
+    #Run fourier transform against rows of a
+    rowTrans = []
+    for row in a:
+        #print(len(row))
+        rowTrans.append(FFTransform(row))
+    
+    #Run Fourier transform against cols of a
+    fourierSum = [] #End product
+    for col in myMath.invertMatrix(rowTrans):
+        #print(len(col))
+        fourierSum.append(FFTransform(col))
+    fourierSum = np.array(myMath.invertMatrix(fourierSum))
+
+    #print(fourierSum)
+
+    magnitudeSpec = 20*np.log10(abs(np.fft.fftshift(fourierSum))) #For fourier analysis
+    #return magnitudeSpec.astype('uint8')
+
+    print(abs(fourierSum))
+    threshold = 0.1*threshold * abs(fourierSum).max()
+    print(threshold)
+
+    indecies = (abs(fourierSum)>threshold)*1
+    print(indecies)
+    fourierSumFiltered = fourierSum*indecies
+
+    count = x*y - sum(sum(indecies))
+    percentLoss = 100-count/(x*y)*100
+    print("Keeping "+str(percentLoss)+"% of the original image...")
+    
+    ### Inverse 2d DFT ###
+    rowTrans = []
+    for row in fourierSumFiltered: #Done on rows
+        rowTrans.append(IFFTransform(row))
+
+    fourierEndSum = []
+    for col in myMath.invertMatrix(rowTrans):
+        fourierEndSum.append(IFFTransform(col))
+    compressedImgData = np.rint(np.array(myMath.invertMatrix(fourierEndSum)))
+
+    for x in range(len(compressedImgData)): #Reformatting image
+        for y in range(len(compressedImgData[x])):
+            if compressedImgData[x][y] < 0:
+                compressedImgData[x][y] = 0
+            if compressedImgData[x][y] > 255:
+                compressedImgData[x][y] = 255
+
+    return compressedImgData.astype('uint8')
